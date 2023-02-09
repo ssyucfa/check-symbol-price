@@ -1,4 +1,5 @@
 import decimal
+import os
 from datetime import datetime, timedelta
 from typing import Any
 
@@ -8,9 +9,11 @@ import requests
 SYMBOL = "XRPUSDT"
 BINANCE_PRICE_URL = "https://api.binance.com/api/v3/ticker/price"
 
+REDIS_HOST = os.getenv("REDIS_HOST", "localhost")
+
 
 def get_redis_connection() -> redis.Redis:
-    r = redis.Redis(host="localhost", port=6379, db=0)
+    r = redis.Redis(host=REDIS_HOST, port=6379, db=0)
     return r
 
 
@@ -44,3 +47,15 @@ def get_xpr_prices() -> dict[str, Any]:
 
 def get_xpr_price_change(cached_xpr_price: decimal.Decimal, current_xpr_price: decimal.Decimal):
     return round((cached_xpr_price - current_xpr_price) / cached_xpr_price * 100, 3)
+
+
+def check_xpr_usdt_price() -> None:
+    prices = get_xpr_prices()
+    xpr_price_change = get_xpr_price_change(prices["cached_xpr_price"], prices["current_xpr_price"])
+
+    # По тз было непонятно, нужно == или >=, так что выбрал наиболее логичное
+    if xpr_price_change >= 1:
+        print("Цена снизилась на 1 процент или больше")
+
+        # По тз было непонятно, нужно ли менять значение, так что выбрал наиболее логичное
+        set_xpr(prices["current_xpr_price"])

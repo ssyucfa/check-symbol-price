@@ -1,0 +1,15 @@
+services:
+  redis:
+    image: redis:alpine
+
+  celery:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    command: celery -A tasks worker -B
+    volumes:
+      - ./xpr_usdt/:/app/xpr_usdt
+    depends_on:
+      - redis
+    env_file:
+      - .env.dev
